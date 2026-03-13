@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:17-alpine
+    restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -15,6 +16,7 @@ services:
 
   web:
     build: .
+    restart: unless-stopped
     ports:
       - "${WEB_PORT:-8000}:8000"
     volumes:
