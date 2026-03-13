@@ -1,0 +1,14 @@
+[project]
+name = "lab-assets"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.1",
+    "django-filter>=24.0",
+    "djangorestframework>=3.15",
+    "pillow>=10.0",
+    "requests>=2.31",
+    "scikit-rf>=1.0",
+]

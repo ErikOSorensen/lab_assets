@@ -1,0 +1,81 @@
+{% extends "devices/base.html" %}
+{% block title %}Devices — RF Lab Assets{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Devices</h1>
+    <a href="{% url 'device_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Add Device
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <form method="get" class="d-flex gap-2">
+            <input type="text" name="q" class="form-control" placeholder="Search devices..."
+                   value="{{ search_query }}">
+            {% if current_category %}
+            <input type="hidden" name="category" value="{{ current_category }}">
+            {% endif %}
+            <button type="submit" class="btn btn-outline-secondary">
+                <i class="bi bi-search"></i>
+            </button>
+            {% if search_query %}
+            <a href="{% url 'device_list' %}{% if current_category %}?category={{ current_category }}{% endif %}"
+               class="btn btn-outline-danger">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="mb-3">
+    <a href="{% url 'device_list' %}" class="btn btn-sm {% if not current_category %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+    {% for cat in categories %}
+    <a href="{% url 'device_list' %}?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}"
+       class="btn btn-sm {% if current_category == cat.slug %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        {{ cat.name }}
+    </a>
+    {% endfor %}
+</div>
+
+{% if devices %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for device in devices %}
+    <div class="col">
+        <div class="card h-100 device-card">
+            {% with photo=device.primary_photo %}
+            {% if photo %}
+            <img src="{{ photo.image.url }}" class="card-img-top device-thumbnail" alt="{{ device.name }}">
+            {% else %}
+            <div class="card-img-top device-thumbnail-placeholder d-flex align-items-center justify-content-center bg-light">
+                <i class="bi bi-broadcast-pin display-1 text-muted"></i>
+            </div>
+            {% endif %}
+            {% endwith %}
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{% url 'device_detail' pk=device.pk %}" class="text-decoration-none">
+                        {{ device.name }}
+                    </a>
+                </h5>
+                <span class="badge bg-dark mb-2 font-monospace">{{ device.asset_tag }}</span>
+                <span class="badge bg-secondary mb-2">{{ device.category.name }}</span>
+                {% if device.manufacturer %}
+                <p class="card-text text-muted mb-1">{{ device.manufacturer }}{% if device.model_number %} — {{ device.model_number }}{% endif %}</p>
+                {% endif %}
+                {% if not device.is_active %}
+                <span class="badge bg-warning">Inactive</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-inbox display-1 text-muted"></i>
+    <p class="mt-3 text-muted">No devices found.</p>
+    <a href="{% url 'device_create' %}" class="btn btn-primary">Add your first device</a>
+</div>
+{% endif %}
+{% endblock %}

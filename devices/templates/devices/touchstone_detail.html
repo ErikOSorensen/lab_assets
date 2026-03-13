@@ -1,0 +1,83 @@
+{% extends "devices/base.html" %}
+{% load device_extras %}
+{% block title %}{{ touchstone.original_filename }} — RF Lab Assets{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'device_list' %}">Devices</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'device_detail' pk=device.pk %}">{{ device.name }}</a></li>
+        <li class="breadcrumb-item active">{{ touchstone.original_filename }}</li>
+    </ol>
+</nav>
+
+<h1>{{ touchstone.original_filename }}</h1>
+{% if touchstone.description %}
+<p class="text-muted">{{ touchstone.description }}</p>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Metadata</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr><th>Device</th><td>{{ device.name }}</td></tr>
+                    <tr><th>Ports</th><td>{{ touchstone.port_count }}</td></tr>
+                    <tr><th>Frequency Points</th><td>{{ touchstone.frequency_npoints }}</td></tr>
+                    <tr><th>Freq Min</th><td>{{ touchstone.frequency_min_hz|format_frequency }}</td></tr>
+                    <tr><th>Freq Max</th><td>{{ touchstone.frequency_max_hz|format_frequency }}</td></tr>
+                    <tr><th>Impedance</th><td>{{ touchstone.impedance_ohms }} &Omega;</td></tr>
+                    {% for key, value in touchstone.parameters.items %}
+                    <tr><th>{{ key }}</th><td>{{ value }}</td></tr>
+                    {% endfor %}
+                    <tr><th>Uploaded</th><td>{{ touchstone.uploaded_at|date:"Y-m-d H:i" }}</td></tr>
+                </table>
+                <a href="{{ touchstone.file.url }}" class="btn btn-outline-primary btn-sm" download>
+                    <i class="bi bi-download"></i> Download
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        {% if plot_data_json %}
+        <div class="card">
+            <div class="card-header">S-Parameters (dB)</div>
+            <div class="card-body">
+                <div id="s-param-plot" style="width:100%; height:500px;"></div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if plot_data_json %}
+<script>
+(function() {
+    const plotData = {{ plot_data_json|safe }};
+    const traces = plotData.traces.map(function(trace) {
+        return {
+            x: trace.x,
+            y: trace.y,
+            mode: 'lines',
+            name: trace.name,
+        };
+    });
+    const layout = {
+        title: plotData.title,
+        xaxis: { title: 'Frequency (GHz)' },
+        yaxis: { title: 'Magnitude (dB)' },
+        showlegend: true,
+        legend: { orientation: 'h', y: -0.2 },
+    };
+    Plotly.newPlot('s-param-plot', traces, layout, { responsive: true });
+})();
+</script>
+{% endif %}
+{% endblock %}

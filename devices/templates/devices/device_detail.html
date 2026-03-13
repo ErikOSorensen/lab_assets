@@ -1,0 +1,297 @@
+{% extends "devices/base.html" %}
+{% load device_extras %}
+{% block title %}{{ device.name }} — RF Lab Assets{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'device_list' %}">Devices</a></li>
+        <li class="breadcrumb-item active">{{ device.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h1>{{ device.name }}</h1>
+        <span class="badge bg-dark font-monospace">{{ device.asset_tag }}</span>
+        <span class="badge bg-secondary">{{ device.category.name }}</span>
+        {% if not device.is_active %}<span class="badge bg-warning">Inactive</span>{% endif %}
+    </div>
+    <div>
+        <a href="{% url 'device_label' pk=device.pk %}" class="btn btn-outline-secondary btn-sm" target="_blank">
+            <i class="bi bi-printer"></i> Print Label
+        </a>
+        <a href="{% url 'device_update' pk=device.pk %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <a href="{% url 'device_delete' pk=device.pk %}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-trash"></i> Delete
+        </a>
+    </div>
+</div>
+
+<ul class="nav nav-tabs" id="deviceTabs" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button">Overview</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#photos" type="button">
+            Photos <span class="badge bg-secondary">{{ device.photos.count }}</span>
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#documents" type="button">
+            Documents <span class="badge bg-secondary">{{ device.documents.count }}</span>
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#touchstone" type="button">
+            Touchstone <span class="badge bg-secondary">{{ device.touchstone_files.count }}</span>
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content mt-3" id="deviceTabContent">
+    <!-- Overview Tab -->
+    <div class="tab-pane fade show active" id="overview">
+        <div class="row">
+            <div class="col-md-8">
+                <table class="table">
+                    {% if device.manufacturer %}
+                    <tr><th>Manufacturer</th><td>{{ device.manufacturer }}</td></tr>
+                    {% endif %}
+                    {% if device.model_number %}
+                    <tr><th>Model Number</th><td>{{ device.model_number }}</td></tr>
+                    {% endif %}
+                    {% if device.serial_number %}
+                    <tr><th>Serial Number</th><td>{{ device.serial_number }}</td></tr>
+                    {% endif %}
+                    {% if device.frequency_min_hz or device.frequency_max_hz %}
+                    <tr><th>Frequency Range</th>
+                        <td>{{ device.frequency_min_hz|format_frequency }} — {{ device.frequency_max_hz|format_frequency }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if device.port_count %}
+                    <tr><th>Ports</th><td>{{ device.port_count }}</td></tr>
+                    {% endif %}
+                    {% if device.impedance_ohms %}
+                    <tr><th>Impedance</th><td>{{ device.impedance_ohms }} &Omega;</td></tr>
+                    {% endif %}
+                    {% if device.max_power_dbm != None %}
+                    <tr><th>Max Power</th><td>{{ device.max_power_dbm }} dBm</td></tr>
+                    {% endif %}
+                    {% if device.location %}
+                    <tr><th>Location</th><td>{{ device.location }}</td></tr>
+                    {% endif %}
+                </table>
+                {% if device.description %}
+                <h5>Description</h5>
+                <p>{{ device.description }}</p>
+                {% endif %}
+                {% if device.notes %}
+                <h5>Notes</h5>
+                <p>{{ device.notes }}</p>
+                {% endif %}
+            </div>
+            <div class="col-md-4">
+                {% with photo=device.primary_photo %}
+                {% if photo %}
+                <img src="{{ photo.image.url }}" class="img-fluid rounded" alt="{{ device.name }}">
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Photos Tab -->
+    <div class="tab-pane fade" id="photos">
+        <form method="post" action="{% url 'upload_photo' pk=device.pk %}" enctype="multipart/form-data" class="mb-4">
+            {% csrf_token %}
+            <div class="row g-2 align-items-end">
+                <div class="col-auto">
+                    {{ photo_form.image }}
+                </div>
+                <div class="col-auto">
+                    <input type="text" name="caption" class="form-control" placeholder="Caption (optional)">
+                </div>
+                <div class="col-auto">
+                    <div class="form-check">
+                        <input type="checkbox" name="is_primary" class="form-check-input" id="photoPrimary">
+                        <label class="form-check-label" for="photoPrimary">Primary</label>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-upload"></i> Upload
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="row row-cols-1 row-cols-md-3 g-3">
+            {% for photo in device.photos.all %}
+            <div class="col">
+                <div class="card">
+                    <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.caption }}">
+                    <div class="card-body">
+                        <p class="card-text">{{ photo.caption }}</p>
+                        {% if photo.is_primary %}<span class="badge bg-primary">Primary</span>{% endif %}
+                        <form method="post" action="{% url 'delete_photo' pk=photo.pk %}" class="mt-2">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm"
+                                    onclick="return confirm('Delete this photo?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted">No photos yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Documents Tab -->
+    <div class="tab-pane fade" id="documents">
+        <form method="post" action="{% url 'upload_document' pk=device.pk %}" enctype="multipart/form-data" class="mb-4">
+            {% csrf_token %}
+            <div class="row g-2 align-items-end">
+                <div class="col-auto">
+                    {{ document_form.file }}
+                </div>
+                <div class="col-auto">
+                    <input type="text" name="title" class="form-control" placeholder="Title" required>
+                </div>
+                <div class="col-auto">
+                    <select name="doc_type" class="form-select">
+                        <option value="datasheet">Datasheet</option>
+                        <option value="manual">Manual</option>
+                        <option value="app_note">Application Note</option>
+                        <option value="other" selected>Other</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-upload"></i> Upload
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <table class="table">
+            <thead>
+                <tr><th>Title</th><th>Type</th><th>Uploaded</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for doc in device.documents.all %}
+                <tr>
+                    <td><a href="{{ doc.file.url }}">{{ doc.title }}</a></td>
+                    <td><span class="badge bg-info">{{ doc.get_doc_type_display }}</span></td>
+                    <td>{{ doc.uploaded_at|date:"Y-m-d" }}</td>
+                    <td>
+                        <form method="post" action="{% url 'delete_document' pk=doc.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm"
+                                    onclick="return confirm('Delete this document?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-muted">No documents yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Touchstone Tab -->
+    <div class="tab-pane fade" id="touchstone">
+        <form method="post" action="{% url 'upload_touchstone' pk=device.pk %}" enctype="multipart/form-data" class="mb-4">
+            {% csrf_token %}
+            <div class="row g-2 align-items-end">
+                <div class="col-auto">
+                    {{ touchstone_form.file }}
+                </div>
+                <div class="col-auto">
+                    <input type="text" name="description" class="form-control" placeholder="Description (optional)">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-upload"></i> Upload
+                    </button>
+                </div>
+            </div>
+            <div id="ts-params" class="mt-2">
+                <div class="ts-param-row row g-2 mb-1">
+                    <div class="col-auto">
+                        <input type="text" name="param_keys" class="form-control form-control-sm" placeholder="Key (e.g. attenuation)">
+                    </div>
+                    <div class="col-auto">
+                        <input type="text" name="param_values" class="form-control form-control-sm" placeholder="Value (e.g. 10 dB)">
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addParamRow()">
+                <i class="bi bi-plus"></i> Add parameter
+            </button>
+        </form>
+
+        <table class="table">
+            <thead>
+                <tr><th>Filename</th><th>Parameters</th><th>Ports</th><th>Points</th><th>Freq Range</th><th>Uploaded</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for ts in device.touchstone_files.all %}
+                <tr>
+                    <td><a href="{% url 'touchstone_detail' pk=ts.pk %}">{{ ts.original_filename }}</a></td>
+                    <td>
+                        {% for key, value in ts.parameters.items %}
+                        <span class="badge bg-info">{{ key }}: {{ value }}</span>
+                        {% endfor %}
+                    </td>
+                    <td>{{ ts.port_count }}</td>
+                    <td>{{ ts.frequency_npoints }}</td>
+                    <td>{{ ts.frequency_min_hz|format_frequency }} — {{ ts.frequency_max_hz|format_frequency }}</td>
+                    <td>{{ ts.uploaded_at|date:"Y-m-d" }}</td>
+                    <td>
+                        <form method="post" action="{% url 'delete_touchstone' pk=ts.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm"
+                                    onclick="return confirm('Delete this file?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-muted">No Touchstone files yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addParamRow() {
+    const container = document.getElementById('ts-params');
+    const row = document.createElement('div');
+    row.className = 'ts-param-row row g-2 mb-1';
+    row.innerHTML =
+        '<div class="col-auto">' +
+        '<input type="text" name="param_keys" class="form-control form-control-sm" placeholder="Key">' +
+        '</div>' +
+        '<div class="col-auto">' +
+        '<input type="text" name="param_values" class="form-control form-control-sm" placeholder="Value">' +
+        '</div>' +
+        '<div class="col-auto">' +
+        '<button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest(\'.ts-param-row\').remove()">' +
+        '<i class="bi bi-x"></i></button>' +
+        '</div>';
+    container.appendChild(row);
+}
+</script>
+{% endblock %}

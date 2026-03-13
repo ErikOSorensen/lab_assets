@@ -1,0 +1,25 @@
+{% extends "devices/base.html" %}
+{% block title %}Delete {{ device.name }} — RF Lab Assets{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'device_list' %}">Devices</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'device_detail' pk=device.pk %}">{{ device.name }}</a></li>
+        <li class="breadcrumb-item active">Delete</li>
+    </ol>
+</nav>
+
+<div class="card border-danger">
+    <div class="card-body">
+        <h5 class="card-title text-danger">Delete Device</h5>
+        <p>Are you sure you want to delete <strong>{{ device.name }}</strong>?</p>
+        <p class="text-muted">This will also delete all associated photos, documents, and Touchstone files.</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Yes, delete</button>
+            <a href="{% url 'device_detail' pk=device.pk %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

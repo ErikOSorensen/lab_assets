@@ -1,0 +1,26 @@
+.device-card {
+    transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.device-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.device-thumbnail {
+    height: 200px;
+    object-fit: cover;
+}
+
+.device-thumbnail-placeholder {
+    height: 200px;
+}
+
+.nav-tabs .badge {
+    font-size: 0.7em;
+    vertical-align: middle;
+}
+
+.form-control, .form-select {
+    border-radius: 0.375rem;
+}
