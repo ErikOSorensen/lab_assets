@@ -112,13 +112,19 @@ class DeviceViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
 
         file_obj = request.FILES.get('file')
-        if not file_obj:
-            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        url = request.data.get('url', '')
+        if not file_obj and not url:
+            return Response({'error': 'Provide either a file or a URL (or both).'}, status=status.HTTP_400_BAD_REQUEST)
+
+        title = request.data.get('title', '')
+        if not title:
+            title = file_obj.name if file_obj else url
 
         doc = Document.objects.create(
             device=device,
-            file=file_obj,
-            title=request.data.get('title', file_obj.name),
+            file=file_obj or '',
+            url=url,
+            title=title,
             doc_type=request.data.get('doc_type', 'other'),
         )
         serializer = DocumentSerializer(doc, context={'request': request})
@@ -183,6 +189,7 @@ class DocumentViewSet(viewsets.GenericViewSet):
 
     def destroy(self, request, pk=None):
         doc = self.get_object()
-        doc.file.delete()
+        if doc.file:
+            doc.file.delete()
         doc.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

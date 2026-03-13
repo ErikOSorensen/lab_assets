@@ -3,6 +3,7 @@ import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.db.models import Q
+from django.urls import reverse
 
 from .models import Device, DeviceCategory, DevicePhoto, Document, TouchstoneFile
 from .forms import DeviceForm, DevicePhotoForm, DocumentForm, TouchstoneUploadForm
@@ -85,6 +86,11 @@ def device_delete(request, pk):
     return render(request, 'devices/device_confirm_delete.html', {'device': device})
 
 
+def _device_tab_redirect(device_pk, tab):
+    """Redirect to a device detail page with a specific tab selected."""
+    return redirect(reverse('device_detail', kwargs={'pk': device_pk}) + f'#{tab}')
+
+
 def upload_photo(request, pk):
     device = get_object_or_404(Device, pk=pk)
     if request.method == 'POST':
@@ -94,7 +100,7 @@ def upload_photo(request, pk):
             photo.device = device
             photo.save()
             messages.success(request, 'Photo uploaded.')
-    return redirect('device_detail', pk=pk)
+    return _device_tab_redirect(pk, 'photos')
 
 
 def delete_photo(request, pk):
@@ -104,7 +110,7 @@ def delete_photo(request, pk):
         photo.image.delete()
         photo.delete()
         messages.success(request, 'Photo deleted.')
-    return redirect('device_detail', pk=device_pk)
+    return _device_tab_redirect(device_pk, 'photos')
 
 
 def upload_document(request, pk):
@@ -115,18 +121,22 @@ def upload_document(request, pk):
             doc = form.save(commit=False)
             doc.device = device
             doc.save()
-            messages.success(request, 'Document uploaded.')
-    return redirect('device_detail', pk=pk)
+            messages.success(request, 'Document added.')
+        else:
+            for error in form.non_field_errors():
+                messages.error(request, error)
+    return _device_tab_redirect(pk, 'documents')
 
 
 def delete_document(request, pk):
     doc = get_object_or_404(Document, pk=pk)
     device_pk = doc.device.pk
     if request.method == 'POST':
-        doc.file.delete()
+        if doc.file:
+            doc.file.delete()
         doc.delete()
         messages.success(request, 'Document deleted.')
-    return redirect('device_detail', pk=device_pk)
+    return _device_tab_redirect(device_pk, 'documents')
 
 
 def upload_touchstone(request, pk):
@@ -147,7 +157,7 @@ def upload_touchstone(request, pk):
                 ts.impedance_ohms = metadata.impedance_ohms
             except Exception as e:
                 messages.error(request, f'Error parsing Touchstone file: {e}')
-                return redirect('device_detail', pk=pk)
+                return _device_tab_redirect(pk, 'touchstone')
 
             # Collect key-value parameters from the dynamic form rows
             keys = request.POST.getlist('param_keys')
@@ -161,7 +171,7 @@ def upload_touchstone(request, pk):
 
             ts.save()
             messages.success(request, f'Touchstone file "{ts.original_filename}" uploaded.')
-    return redirect('device_detail', pk=pk)
+    return _device_tab_redirect(pk, 'touchstone')
 
 
 def delete_touchstone(request, pk):
@@ -171,7 +181,7 @@ def delete_touchstone(request, pk):
         ts.file.delete()
         ts.delete()
         messages.success(request, 'Touchstone file deleted.')
-    return redirect('device_detail', pk=device_pk)
+    return _device_tab_redirect(device_pk, 'touchstone')
 
 
 def device_label(request, pk):

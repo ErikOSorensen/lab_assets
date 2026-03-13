@@ -78,6 +78,28 @@ Click on any Touchstone file name to see its detail page, which shows the parsed
 
 **Smith chart** — When the file contains reflection parameters (S11, S22, ...), a Smith Chart option appears under Chart Type. Switching to it plots the selected reflection parameters on a standard Smith chart, which is useful for inspecting impedance matching and return loss behaviour across frequency. Transmission parameters (S21, S12, ...) are not shown in Smith chart mode since they are not meaningful on a Smith chart.
 
+## Documents
+
+The Documents tab on each device can hold both uploaded files and external URLs. This covers datasheets, manuals, application notes, measurement results, and anything else you want to keep associated with a device.
+
+### Document types
+
+| Type | Typical use |
+|------|-------------|
+| Datasheet | Manufacturer's datasheet (PDF upload or link to manufacturer's site) |
+| Manual | Operating or service manual |
+| Application Note | Relevant app notes |
+| Measurement | Non-Touchstone measurement data — spectrum screenshots, power meter logs, noise figure results, etc. |
+| Other | Anything that doesn't fit the above |
+
+### Files vs. URLs
+
+When adding a document you can provide a **file**, a **URL**, or both:
+
+- **File only** — upload a PDF, image, CSV, or any other file. It is stored on the server and served directly.
+- **URL only** — link to an external resource (e.g. a manufacturer's datasheet page, a shared Google Drive file, a lab wiki page). Nothing is downloaded — the link is stored as-is.
+- **Both** — useful when you have a local copy but also want to reference the canonical online source.
+
 ## Printing Labels
 
 Each device detail page has a **Print Label** button that opens a print-ready page. The label contains:

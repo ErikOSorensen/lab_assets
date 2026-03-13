@@ -40,8 +40,16 @@ class DevicePhotoAdmin(admin.ModelAdmin):
 
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
-    list_display = ['title', 'device', 'doc_type', 'uploaded_at']
+    list_display = ['title', 'device', 'doc_type', 'has_file', 'has_url', 'uploaded_at']
     list_filter = ['doc_type']
+
+    @admin.display(boolean=True, description='File')
+    def has_file(self, obj):
+        return bool(obj.file)
+
+    @admin.display(boolean=True, description='URL')
+    def has_url(self, obj):
+        return bool(obj.url)
 
 
 @admin.register(TouchstoneFile)

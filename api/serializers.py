@@ -18,8 +18,9 @@ class DevicePhotoSerializer(serializers.ModelSerializer):
 class DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
-        fields = ['id', 'file', 'title', 'doc_type', 'uploaded_at']
+        fields = ['id', 'file', 'url', 'title', 'doc_type', 'uploaded_at']
         read_only_fields = ['id', 'uploaded_at']
+        extra_kwargs = {'file': {'required': False}, 'url': {'required': False}}
 
 
 class TouchstoneFileSerializer(serializers.ModelSerializer):

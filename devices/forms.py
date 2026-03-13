@@ -110,10 +110,21 @@ class DevicePhotoForm(forms.ModelForm):
         fields = ['image', 'caption', 'is_primary']
 
 
-class DocumentForm(forms.ModelForm):
+class DocumentForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Document
-        fields = ['file', 'title', 'doc_type']
+        fields = ['file', 'url', 'title', 'doc_type']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['file'].required = False
+        self.fields['url'].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        if not cleaned.get('file') and not cleaned.get('url'):
+            raise forms.ValidationError('Provide either a file or a URL (or both).')
+        return cleaned
 
 
 class TouchstoneUploadForm(forms.ModelForm):

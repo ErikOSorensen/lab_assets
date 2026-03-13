@@ -112,12 +112,14 @@ class Document(models.Model):
         ('datasheet', 'Datasheet'),
         ('manual', 'Manual'),
         ('app_note', 'Application Note'),
+        ('measurement', 'Measurement'),
         ('other', 'Other'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='documents')
-    file = models.FileField(upload_to=device_document_path)
+    file = models.FileField(upload_to=device_document_path, blank=True)
+    url = models.URLField(max_length=500, blank=True, help_text="External URL (use instead of or in addition to a file upload)")
     title = models.CharField(max_length=300)
     doc_type = models.CharField(max_length=20, choices=DOC_TYPE_CHOICES, default='other')
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -127,6 +129,11 @@ class Document(models.Model):
 
     def __str__(self):
         return self.title
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if not self.file and not self.url:
+            raise ValidationError('Provide either a file or a URL (or both).')
 
 
 class TouchstoneFile(models.Model):

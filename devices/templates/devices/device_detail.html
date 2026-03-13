@@ -158,8 +158,16 @@
             {% csrf_token %}
             <div class="row g-2 align-items-end">
                 <div class="col-auto">
-                    {{ document_form.file }}
+                    <input type="file" name="file" class="form-control">
                 </div>
+                <div class="col-auto">
+                    <span class="text-muted align-middle">or</span>
+                </div>
+                <div class="col-auto">
+                    <input type="url" name="url" class="form-control" placeholder="URL">
+                </div>
+            </div>
+            <div class="row g-2 align-items-end mt-1">
                 <div class="col-auto">
                     <input type="text" name="title" class="form-control" placeholder="Title" required>
                 </div>
@@ -168,12 +176,13 @@
                         <option value="datasheet">Datasheet</option>
                         <option value="manual">Manual</option>
                         <option value="app_note">Application Note</option>
+                        <option value="measurement">Measurement</option>
                         <option value="other" selected>Other</option>
                     </select>
                 </div>
                 <div class="col-auto">
                     <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-upload"></i> Upload
+                        <i class="bi bi-plus-circle"></i> Add
                     </button>
                 </div>
             </div>
@@ -181,13 +190,30 @@
 
         <table class="table">
             <thead>
-                <tr><th>Title</th><th>Type</th><th>Uploaded</th><th></th></tr>
+                <tr><th>Title</th><th>Type</th><th>Source</th><th>Added</th><th></th></tr>
             </thead>
             <tbody>
                 {% for doc in device.documents.all %}
                 <tr>
-                    <td><a href="{{ doc.file.url }}">{{ doc.title }}</a></td>
+                    <td>
+                        {% if doc.file %}
+                        <a href="{{ doc.file.url }}">{{ doc.title }}</a>
+                        {% elif doc.url %}
+                        <a href="{{ doc.url }}" target="_blank" rel="noopener">{{ doc.title }} <i class="bi bi-box-arrow-up-right"></i></a>
+                        {% else %}
+                        {{ doc.title }}
+                        {% endif %}
+                    </td>
                     <td><span class="badge bg-info">{{ doc.get_doc_type_display }}</span></td>
+                    <td>
+                        {% if doc.file and doc.url %}
+                        <i class="bi bi-file-earmark"></i> + <a href="{{ doc.url }}" target="_blank" rel="noopener"><i class="bi bi-link-45deg"></i></a>
+                        {% elif doc.file %}
+                        <i class="bi bi-file-earmark"></i> File
+                        {% elif doc.url %}
+                        <i class="bi bi-link-45deg"></i> URL
+                        {% endif %}
+                    </td>
                     <td>{{ doc.uploaded_at|date:"Y-m-d" }}</td>
                     <td>
                         <form method="post" action="{% url 'delete_document' pk=doc.pk %}" class="d-inline">
@@ -200,7 +226,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="4" class="text-muted">No documents yet.</td></tr>
+                <tr><td colspan="5" class="text-muted">No documents yet.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -293,5 +319,16 @@ function addParamRow() {
         '</div>';
     container.appendChild(row);
 }
+
+// Activate the correct tab when the URL has a #fragment
+(function() {
+    var hash = window.location.hash;
+    if (hash) {
+        var tab = document.querySelector('button[data-bs-target="' + hash + '"]');
+        if (tab) {
+            new bootstrap.Tab(tab).show();
+        }
+    }
+})();
 </script>
 {% endblock %}
