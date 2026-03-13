@@ -103,10 +103,23 @@ The label is compact — asset tag and QR code are the primary elements so they 
 
 ## Python Client Library
 
-The `client/` directory contains a standalone pip-installable package for use in measurement scripts and Jupyter notebooks.
+The client library can be installed directly from GitHub on any machine on the lab network — no need to clone the full repo.
 
 ```bash
-pip install -e client/
+# Install from GitHub
+uv pip install "lab-assets-client @ git+ssh://git@github.com/ErikOSorensen/lab_assets.git#subdirectory=client"
+
+# Or with HTTPS
+uv pip install "lab-assets-client @ git+https://github.com/ErikOSorensen/lab_assets.git#subdirectory=client"
+
+# Or add to a project's dependencies (pyproject.toml)
+uv add "lab-assets-client @ git+ssh://git@github.com/ErikOSorensen/lab_assets.git#subdirectory=client"
+```
+
+If you have a local clone of the repo, you can also install from that:
+
+```bash
+uv pip install -e client/
 ```
 
 ### Basic usage
