@@ -36,7 +36,11 @@ def parse_touchstone(file_obj, filename):
 
 
 def generate_s_param_plot_data(file_path):
-    """Generate S-parameter plot data for Plotly.js rendering."""
+    """Generate S-parameter plot data for Plotly.js rendering.
+
+    Returns magnitude (dB) traces for all parameters, plus real/imag
+    data for reflection parameters (Sii) to support Smith chart display.
+    """
     import numpy as np
 
     network = skrf.Network(file_path)
@@ -46,12 +50,18 @@ def generate_s_param_plot_data(file_path):
     n_ports = network.number_of_ports
     for i in range(n_ports):
         for j in range(n_ports):
-            s_db = 20 * np.log10(np.abs(network.s[:, i, j]) + 1e-15)
-            traces.append({
+            s_complex = network.s[:, i, j]
+            s_db = 20 * np.log10(np.abs(s_complex) + 1e-15)
+            trace = {
                 'name': f'S{i+1}{j+1}',
                 'x': freq_ghz,
                 'y': s_db.tolist(),
-            })
+                'is_reflection': i == j,
+            }
+            if i == j:
+                trace['real'] = s_complex.real.tolist()
+                trace['imag'] = s_complex.imag.tolist()
+            traces.append(trace)
 
     return {
         'frequencies_ghz': freq_ghz,

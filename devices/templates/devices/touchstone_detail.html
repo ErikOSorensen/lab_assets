@@ -42,11 +42,33 @@
                 </a>
             </div>
         </div>
+
+        {% if plot_data_json %}
+        <div class="card mt-3">
+            <div class="card-header">Plot Options</div>
+            <div class="card-body">
+                <label class="form-label fw-bold mb-2">Traces</label>
+                <div id="trace-checkboxes"></div>
+                <hr>
+                <label class="form-label fw-bold mb-2">Chart Type</label>
+                <div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="chartType" id="chartMagnitude" value="magnitude" checked>
+                        <label class="form-check-label" for="chartMagnitude">Magnitude (dB)</label>
+                    </div>
+                    <div class="form-check" id="smithOption" style="display:none;">
+                        <input class="form-check-input" type="radio" name="chartType" id="chartSmith" value="smith">
+                        <label class="form-check-label" for="chartSmith">Smith Chart</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
     <div class="col-md-8">
         {% if plot_data_json %}
         <div class="card">
-            <div class="card-header">S-Parameters (dB)</div>
+            <div class="card-header" id="plot-card-header">S-Parameters</div>
             <div class="card-body">
                 <div id="s-param-plot" style="width:100%; height:500px;"></div>
             </div>
@@ -61,22 +83,118 @@
 <script>
 (function() {
     const plotData = {{ plot_data_json|safe }};
-    const traces = plotData.traces.map(function(trace) {
-        return {
-            x: trace.x,
-            y: trace.y,
-            mode: 'lines',
-            name: trace.name,
-        };
+    const allTraces = plotData.traces;
+    const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+                     '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+
+    // Assign stable colors per trace
+    allTraces.forEach(function(t, i) { t.color = colors[i % colors.length]; });
+
+    // Build trace checkboxes
+    const checkboxContainer = document.getElementById('trace-checkboxes');
+    allTraces.forEach(function(trace, idx) {
+        const div = document.createElement('div');
+        div.className = 'form-check';
+        div.innerHTML =
+            '<input class="form-check-input" type="checkbox" id="trace' + idx + '" value="' + idx + '" checked>' +
+            '<label class="form-check-label" for="trace' + idx + '">' +
+            '<span style="color:' + trace.color + ';">\u25CF</span> ' + trace.name +
+            (trace.is_reflection ? ' <small class="text-muted">(reflection)</small>' : '') +
+            '</label>';
+        checkboxContainer.appendChild(div);
+        div.querySelector('input').addEventListener('change', updatePlot);
     });
-    const layout = {
-        title: plotData.title,
-        xaxis: { title: 'Frequency (GHz)' },
-        yaxis: { title: 'Magnitude (dB)' },
-        showlegend: true,
-        legend: { orientation: 'h', y: -0.2 },
-    };
-    Plotly.newPlot('s-param-plot', traces, layout, { responsive: true });
+
+    // Show Smith chart option if any reflection params exist
+    const hasReflection = allTraces.some(function(t) { return t.is_reflection; });
+    if (hasReflection) {
+        document.getElementById('smithOption').style.display = '';
+    }
+
+    document.querySelectorAll('input[name="chartType"]').forEach(function(radio) {
+        radio.addEventListener('change', updatePlot);
+    });
+
+    function getSelectedIndices() {
+        const indices = [];
+        allTraces.forEach(function(_, idx) {
+            if (document.getElementById('trace' + idx).checked) {
+                indices.push(idx);
+            }
+        });
+        return indices;
+    }
+
+    function getChartType() {
+        return document.querySelector('input[name="chartType"]:checked').value;
+    }
+
+    function updatePlot() {
+        const selected = getSelectedIndices();
+        const chartType = getChartType();
+        const plotDiv = document.getElementById('s-param-plot');
+        const header = document.getElementById('plot-card-header');
+
+        if (chartType === 'smith') {
+            // Smith chart: only reflection parameters that are selected
+            const smithTraces = [];
+            selected.forEach(function(idx) {
+                const t = allTraces[idx];
+                if (t.is_reflection && t.real && t.imag) {
+                    smithTraces.push({
+                        type: 'scattersmith',
+                        real: t.real,
+                        imag: t.imag,
+                        mode: 'lines',
+                        name: t.name,
+                        line: { color: t.color },
+                    });
+                }
+            });
+
+            if (smithTraces.length === 0) {
+                Plotly.newPlot(plotDiv, [], {
+                    title: 'No reflection parameters selected',
+                    annotations: [{
+                        text: 'Select a reflection parameter (Sii) to view the Smith chart',
+                        showarrow: false, font: { size: 14 }
+                    }]
+                }, { responsive: true });
+            } else {
+                const layout = {
+                    title: plotData.title + ' — Smith Chart',
+                    showlegend: true,
+                    legend: { orientation: 'h', y: -0.15 },
+                };
+                Plotly.newPlot(plotDiv, smithTraces, layout, { responsive: true });
+            }
+            header.textContent = 'S-Parameters — Smith Chart';
+        } else {
+            // Magnitude (dB) plot
+            const magTraces = selected.map(function(idx) {
+                var t = allTraces[idx];
+                return {
+                    x: t.x,
+                    y: t.y,
+                    mode: 'lines',
+                    name: t.name,
+                    line: { color: t.color },
+                };
+            });
+            const layout = {
+                title: plotData.title,
+                xaxis: { title: 'Frequency (GHz)' },
+                yaxis: { title: 'Magnitude (dB)' },
+                showlegend: true,
+                legend: { orientation: 'h', y: -0.2 },
+            };
+            Plotly.newPlot(plotDiv, magTraces, layout, { responsive: true });
+            header.textContent = 'S-Parameters — Magnitude (dB)';
+        }
+    }
+
+    // Initial render
+    updatePlot();
 })();
 </script>
 {% endif %}
