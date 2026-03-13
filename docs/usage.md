@@ -72,7 +72,11 @@ Parameters are entered as key/value pairs in the upload form. Use the "+ Add par
 
 ### Viewing S-Parameters
 
-Click on any Touchstone file name to see its detail page, which shows the parsed metadata and an interactive S-parameter magnitude plot (dB vs. frequency) rendered with Plotly.js. You can zoom, pan, and hover for exact values.
+Click on any Touchstone file name to see its detail page, which shows the parsed metadata and an interactive plot rendered with Plotly.js. You can zoom, pan, and hover for exact values.
+
+**Selecting traces** — The Plot Options panel lists every S-parameter in the file with a checkbox. Toggle individual traces on or off to focus on the parameters you care about. For a 2-port device this means you can, for example, show only S21 (forward transmission) without the clutter of S12, S11, and S22.
+
+**Smith chart** — When the file contains reflection parameters (S11, S22, ...), a Smith Chart option appears under Chart Type. Switching to it plots the selected reflection parameters on a standard Smith chart, which is useful for inspecting impedance matching and return loss behaviour across frequency. Transmission parameters (S21, S12, ...) are not shown in Smith chart mode since they are not meaningful on a Smith chart.
 
 ## Printing Labels
 
