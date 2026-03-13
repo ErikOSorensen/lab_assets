@@ -2,15 +2,83 @@
 
 A Django web application for managing home electronics/RF lab devices — attenuators, mixers, cable assemblies, couplers, and more. Upload Touchstone files (.sNp), device photos, and datasheets. View S-parameter plots in the browser. Use the Python client library to pull `skrf.Network` objects directly into measurement scripts for de-embedding.
 
-## Requirements
+## Docker Deployment (recommended)
+
+The simplest way to run the app is with Docker Compose. This gives you the Django app with gunicorn and a PostgreSQL database.
+
+```bash
+git clone <repo-url>
+cd lab_assets
+
+# Start everything
+docker compose up -d
+
+# That's it — the app is at http://localhost:8000
+# Default login: admin / admin
+```
+
+On first start, the entrypoint automatically runs migrations, seeds categories, and creates the admin user.
+
+### Configuration
+
+Create a `.env` file to override defaults:
+
+```env
+# Generate a real key: python -c "import secrets; print(secrets.token_urlsafe(50))"
+DJANGO_SECRET_KEY=your-secret-key-here
+
+# Change the default admin password
+DJANGO_SUPERUSER_USERNAME=admin
+DJANGO_SUPERUSER_PASSWORD=your-password-here
+DJANGO_SUPERUSER_EMAIL=you@example.com
+
+# If accessing from other machines on the lab network
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,lab-server.local,192.168.1.50
+DJANGO_CSRF_TRUSTED_ORIGINS=http://lab-server.local:8000,http://192.168.1.50:8000
+
+# Database password
+POSTGRES_PASSWORD=lab_assets_dev
+
+# Change the exposed port
+WEB_PORT=8000
+```
+
+### Managing the container
+
+```bash
+docker compose up -d          # Start in background
+docker compose logs -f web    # Follow app logs
+docker compose down           # Stop
+docker compose down -v        # Stop and delete database volume (destructive!)
+```
+
+### Backups
+
+Database and uploaded files are stored in Docker volumes. To back up:
+
+```bash
+# Database dump
+docker compose exec db pg_dump -U lab_assets lab_assets > backup.sql
+
+# Restore
+docker compose exec -T db psql -U lab_assets lab_assets < backup.sql
+
+# Media files are in the media_data volume
+docker compose cp web:/app/media ./media-backup
+```
+
+## Local Development (without Docker)
+
+For development, you can run directly with SQLite:
+
+### Requirements
 
 - Python 3.12+
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager
 
-## Fresh Install
+### Setup
 
 ```bash
-# Clone the repo
 git clone <repo-url>
 cd lab_assets
 
@@ -29,7 +97,7 @@ uv run python manage.py runserver
 
 The app will be available at http://localhost:8000. The Django admin is at http://localhost:8000/admin/.
 
-Ten default device categories (Attenuator, Mixer, Cable Assembly, etc.) are created automatically during migration.
+Device categories are created automatically during migration.
 
 ## API Token Setup
 
@@ -77,18 +145,27 @@ dut = cable_in.inv ** measured ** cable_out.inv
 
 Every device gets a unique **asset tag** that is auto-generated from the category prefix and a sequential number:
 
-| Category       | Prefix | Example tags           |
-|----------------|--------|------------------------|
-| Attenuator     | ATT    | ATT-001, ATT-002, ...  |
-| Mixer          | MIX    | MIX-001, MIX-002, ...  |
-| Cable Assembly | CBL    | CBL-001, CBL-002, ...  |
-| Coupler        | CPL    | CPL-001                |
-| Amplifier      | AMP    | AMP-001                |
-| Filter         | FLT    | FLT-001                |
-| Antenna        | ANT    | ANT-001                |
-| Connector      | CON    | CON-001                |
-| Adapter        | ADP    | ADP-001                |
-| Other          | OTH    | OTH-001                |
+| Category            | Prefix | Example tags          |
+|---------------------|--------|-----------------------|
+| Adapter             | ADP    | ADP-001, ADP-002, ... |
+| Amplifier           | AMP    | AMP-001               |
+| Antenna             | ANT    | ANT-001               |
+| Attenuator          | ATT    | ATT-001, ATT-002, ... |
+| Bias Tee            | BTE    | BTE-001               |
+| Cable Assembly      | CBL    | CBL-001, CBL-002, ... |
+| Circulator          | CIR    | CIR-001               |
+| Connector           | CON    | CON-001               |
+| Coupler             | CPL    | CPL-001               |
+| DC Block            | DCB    | DCB-001               |
+| Filter              | FLT    | FLT-001               |
+| Frequency Reference | REF    | REF-001               |
+| Mixer               | MIX    | MIX-001               |
+| Power Divider       | DIV    | DIV-001               |
+| Probe               | PRB    | PRB-001               |
+| Switch              | SWT    | SWT-001               |
+| Termination         | TRM    | TRM-001               |
+| Waveguide           | WGD    | WGD-001               |
+| Other               | OTH    | OTH-001               |
 
 The asset tag is the stable, human-readable identifier you should use in lab notebooks, measurement scripts, and setup documentation. You can override the auto-generated tag when creating or editing a device if you have an existing numbering scheme.
 
