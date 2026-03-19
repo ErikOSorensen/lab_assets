@@ -8,13 +8,33 @@ A Django web application for managing home electronics/RF lab devices — attenu
 
 The app runs as a Docker Compose stack — the Django app (gunicorn) and a PostgreSQL database. Designed to run inside a Proxmox LXC container on the lab network.
 
+### Creating the LXC container (Proxmox)
+
+1. **Download a container template.** In the Proxmox web UI, go to your storage (e.g. `local`) → **CT Templates** → **Templates** and download **Debian 12 (Bookworm)** (or Ubuntu 24.04).
+
+2. **Create the container.** Click **Create CT** in the top-right corner and fill in:
+
+   | Setting | Recommended value |
+   |---|---|
+   | **Hostname** | `lab-assets` |
+   | **Password** | Set a root password |
+   | **Template** | The Debian/Ubuntu template you just downloaded |
+   | **Disk** | 16 GB (plenty for the app, database, and uploaded files) |
+   | **CPU** | 2 cores |
+   | **Memory** | 2048 MB |
+   | **Network** | DHCP or a static IP on your lab VLAN/bridge |
+
+3. **Enable nesting.** Docker requires this. Go to the container → **Options** → **Features** → check **Nesting**. (Alternatively, on the Proxmox host shell: `pct set <CTID> --features nesting=1`.)
+
+4. **Start the container** and open a console (or SSH in).
+
 ### Prerequisites
 
-A Linux host (or Proxmox LXC) with Docker and Git:
+Inside the LXC container, install Docker and Git:
 
 ```bash
 apt-get update && apt-get install -y docker.io docker-compose-v2 git
-systemctl enable docker
+systemctl enable --now docker
 ```
 
 ### Installation
