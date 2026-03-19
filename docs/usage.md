@@ -111,11 +111,11 @@ Each device detail page has a **Print Label** button that opens a print-ready pa
 ### Setup for Brother QL-700
 
 1. Install the Brother QL-700 printer driver for your OS.
-2. Load 62mm continuous tape (DK-22205 or equivalent).
+2. Load 50mm continuous tape (DK-22225 or equivalent).
 3. Click **Print Label** on any device detail page.
 4. In the browser's print dialog:
    - Select the QL-700 as the printer.
-   - Set paper size to **62mm** (or "DC22205" depending on your driver).
+   - Set paper size to **50mm** (or "DK22225" depending on your driver).
    - Set margins to **None** / **Minimum**.
    - Disable headers and footers.
 5. Print.
